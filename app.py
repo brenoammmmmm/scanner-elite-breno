@@ -2,58 +2,62 @@ import streamlit as st
 import requests
 import pandas as pd
 
-# CONFIGURAÇÃO DE ELITE
+# 1. CONFIGURAÇÃO VISUAL DARK & GOLD
 st.set_page_config(page_title="APEXPITCH REVOLUTION", layout="wide")
 st.markdown("<style>body {background-color: #000; color: #D4AF37;}</style>", unsafe_allow_html=True)
 
-st.title("🏆 APEXPITCH: MONITORAMENTO GLOBAL")
+st.title("🏆 APEXPITCH: INTELLIGENCE & ODDS RADAR")
 
-# CHAVE QUE VOCÊ MOSTROU NA FOTO image_123940.png
+# Sua chave que já está funcionando
 API_KEY = "7e061e4e93msh7dda34be332134ep1038b9jsn3e9b3ef3677f"
 
-def get_data():
-    url = "https://api-football-v1.p.rapidapi.com/v3/fixtures"
-    # Forçando a busca por todos os jogos ao vivo
-    querystring = {"live": "all"}
-    headers = {
-        "X-RapidAPI-Key": API_KEY,
-        "X-RapidAPI-Host": "api-football-v1.p.rapidapi.com"
-    }
-    try:
-        response = requests.get(url, headers=headers, params=querystring)
-        if response.status_code == 429:
-            return "LIMITE_EXCEDIDO"
-        return response.json()
-    except:
-        return None
+def get_live_data():
+    url = "https://api-football-v1.p.rapidapi.com/v3/fixtures?live=all"
+    headers = {"X-RapidAPI-Key": API_KEY, "X-RapidAPI-Host": "api-football-v1.p.rapidapi.com"}
+    return requests.get(url, headers=headers).json()
 
-if st.button('🔥 SINCRONIZAR MILHARES DE JOGOS'):
-    res = get_data()
+# 2. BARRA LATERAL DE FILTROS TÁTICOS
+st.sidebar.header("🎯 FILTROS DE ELITE")
+sensibilidade = st.sidebar.slider("Sensibilidade do Alerta (Power Surge)", 5, 50, 15)
+
+# 3. BOTÃO DE EXECUÇÃO
+if st.button('🔥 ESCANEAR MERCADO MUNDIAL AGORA'):
+    res = get_live_data()
     
-    if res == "LIMITE_EXCEDIDO":
-        st.error("⚠️ A API diz que você atingiu o limite. Como você acabou de assinar, aguarde 5 minutos para o sistema deles atualizar seu novo plano Basic.")
-    elif res and 'response' in res and len(res['response']) > 0:
+    if res and 'response' in res and len(res['response']) > 0:
         jogos = res['response']
-        db = []
+        analise_final = []
+        
         for j in jogos:
             tempo = j['fixture']['status']['elapsed']
             casa = j['teams']['home']['name']
             fora = j['teams']['away']['name']
-            gols = f"{j['goals']['home']}x{j['goals']['away']}"
+            gols_c = j['goals']['home']
+            gols_f = j['goals']['away']
             
-            # PONTUAÇÃO DE OPORTUNIDADE IA
-            score = (j['goals']['home'] + j['goals']['away'] + 1) * (tempo / 35)
+            # CÁLCULO REVOLUCIONÁRIO: Momentum Progressivo (Power Surge)
+            # Cruzamos o tempo de jogo com a movimentação do placar
+            momentum = (gols_c + gols_f + 1) * (tempo / 30)
             
-            db.append({
+            # DEFINIÇÃO DE ALERTAS INTELIGENTES
+            alerta = "⚖️ Estável"
+            if tempo > 80 and gols_c == gols_f:
+                alerta = "💎 GOLDEN GOAL (Zoião)"
+            elif momentum > sensibilidade:
+                alerta = "⚡ PRESSÃO MÁXIMA"
+            
+            analise_final.append({
                 "Min": f"{tempo}'",
                 "Confronto": f"{casa} x {fora}",
-                "Placar": gols,
-                "Pressão (Score)": round(score, 2),
+                "Placar": f"{gols_c}-{gols_f}",
+                "Power Surge ⚡": round(momentum, 2),
+                "Oportunidade": alerta,
                 "Liga": j['league']['name']
             })
         
-        df = pd.DataFrame(db).sort_values(by="Pressão (Score)", ascending=False)
-        st.success(f"Radar Ativo! {len(jogos)} jogos rastreados.")
+        # Tabela ordenada pelo jogo com maior chance de evento
+        df = pd.DataFrame(analise_final).sort_values(by="Power Surge ⚡", ascending=False)
+        st.success(f"Radar Ativo: {len(jogos)} jogos monitorados simultaneamente.")
         st.dataframe(df, use_container_width=True)
     else:
-        st.warning("🔄 Quase lá! O plano foi assinado, mas a API ainda não liberou os dados. Clique no botão novamente em 1 minuto.")
+        st.info("🔄 Quase lá! Clique no botão novamente em 60 segundos para atualizar os dados.")
