@@ -2,36 +2,30 @@ import streamlit as st
 import requests
 import pandas as pd
 
-st.set_page_config(page_title="APEXPITCH DEBUG", layout="wide")
-st.title("🏆 APEXPITCH: TESTE DE CONEXÃO AO VIVO")
+st.set_page_config(page_title="APEXPITCH LIVE", layout="wide")
+st.title("🏆 APEXPITCH: SCANNER PROFISSIONAL")
 
+# Sua chave que aparece na imagem image_11cc83.png
 API_KEY = "7e061e4e93msh7dda34be332134ep1038b9jsn3e9b3ef3677f"
 
-if st.button('📡 TESTAR CONEXÃO AGORA'):
-    url = "https://api-football-v1.p.rapidapi.com/v3/fixtures?live=all"
+def buscar_dados():
+    # Endereço ajustado para a API que você assinou (Free API Live Football Data)
+    url = "https://free-api-live-football-data.p.rapidapi.com/football-get-all-popular-league"
     headers = {
         "X-RapidAPI-Key": API_KEY,
-        "X-RapidAPI-Host": "api-football-v1.p.rapidapi.com"
+        "X-RapidAPI-Host": "free-api-live-football-data.p.rapidapi.com"
     }
-    
-    res = requests.get(url, headers=headers)
-    
-    # Mostra o que a API está dizendo de verdade
-    st.write(f"Código de Resposta: {res.status_code}")
+    return requests.get(url, headers=headers)
+
+if st.button('🔥 INICIAR SCANNER AGORA'):
+    res = buscar_dados()
     
     if res.status_code == 200:
-        dados = res.json().get('response', [])
+        st.success("CONECTADO COM SUCESSO!")
+        dados = res.json().get('response', {}).get('popular_league', [])
         if dados:
-            st.success(f"SUCESSO! {len(dados)} jogos encontrados.")
-            df = pd.DataFrame([{
-                "Min": j['fixture']['status']['elapsed'],
-                "Jogo": f"{j['teams']['home']['name']} x {j['teams']['away']['name']}",
-                "Placar": f"{j['goals']['home']}x{j['goals']['away']}"
-            } for j in dados])
-            st.dataframe(df, use_container_width=True)
+            st.dataframe(pd.DataFrame(dados))
         else:
-            st.warning("Conectado, mas a API retornou 0 jogos live agora.")
-    elif res.status_code == 403:
-        st.error("ERRO 403: Sua chave foi negada. Verifique se o plano Basic está ativo no painel da RapidAPI.")
+            st.warning("Nenhuma liga popular com jogos agora.")
     else:
-        st.error(f"ERRO {res.status_code}: A API está com instabilidade. Tente novamente em instantes.")
+        st.error(f"Erro {res.status_code}. Verifique a inscrição na API específica.")
