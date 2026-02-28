@@ -5,31 +5,30 @@ import pandas as pd
 st.set_page_config(page_title="APEXPITCH PRO", layout="wide")
 st.title("🏆 APEXPITCH: SCANNER PROFISSIONAL")
 
-# SUA CHAVE REAL DA IMAGE_11CC83.PNG
+# SUA CHAVE VERIFICADA (imagem 11cc83.png)
 API_KEY = "7e061e4e93msh7dda34be332134ep1038b9jsn3e9b3ef3677f"
 
 def buscar_dados():
-    # Este é o ÚNICO endereço que funciona para a sua assinatura atual
-    url = "https://free-api-live-football-data.p.rapidapi.com/football-get-all-fixtures-by-date"
-    querystring = {"date": "2026-02-28"} # Data de hoje
+    # Este é o comando EXATO que deu 200 OK na sua imagem 11c4db.png
+    url = "https://free-api-live-football-data.p.rapidapi.com/football-get-all-popular-league"
     headers = {
         "X-RapidAPI-Key": API_KEY,
         "X-RapidAPI-Host": "free-api-live-football-data.p.rapidapi.com"
     }
-    return requests.get(url, headers=headers, params=querystring)
+    return requests.get(url, headers=headers)
 
 if st.button('🔥 INICIAR SCANNER AGORA'):
-    with st.spinner('Conectando ao satélite...'):
+    with st.spinner('Conectando...'):
         res = buscar_dados()
         
         if res.status_code == 200:
             st.success("CONECTADO COM SUCESSO!")
-            # A estrutura desta API específica é diferente:
-            fixtures = res.json().get('response', {}).get('fixtures', [])
-            if fixtures:
-                df = pd.DataFrame(fixtures)
-                st.dataframe(df)
+            # Pegando a lista de ligas da resposta da API
+            ligas = res.json().get('response', {}).get('popular_league', [])
+            if ligas:
+                df = pd.DataFrame(ligas)
+                st.dataframe(df, use_container_width=True)
             else:
-                st.warning("A API retornou sucesso, mas não há jogos registrados para hoje.")
+                st.warning("Conectado, mas nenhuma liga retornada no momento.")
         else:
-            st.error(f"Erro {res.status_code}. A API diz: {res.text}")
+            st.error(f"Erro {res.status_code}. Detalhes: {res.text}")
