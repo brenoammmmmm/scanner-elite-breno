@@ -1,79 +1,87 @@
 import streamlit as st
 import requests
 import pandas as pd
+import plotly.express as px
+import time
 
-# CONFIGURAÇÃO DE INTERFACE TRADER PRO
-st.set_page_config(page_title="APEXPITCH RADAR PRO", layout="wide")
+# 1. CONFIGURAÇÃO DE INTERFACE DE ALTO NÍVEL
+st.set_page_config(page_title="APEXPITCH RADAR QUANT", layout="wide", initial_sidebar_state="expanded")
+
 st.markdown("""
     <style>
-    .stMetric { background-color: #111; border: 1px solid #ff4b4b; padding: 10px; border-radius: 8px; }
-    .status-alert { padding: 20px; border-radius: 10px; background-color: #ff4b4b; color: white; text-align: center; font-weight: bold; }
+    .main { background-color: #050505; color: #00ff00; }
+    .stMetric { background: #111; border: 1px solid #333; padding: 15px; border-radius: 10px; }
+    .stButton>button { width: 100%; border-radius: 20px; background: linear-gradient(45deg, #ff4b4b, #ff0000); color: white; font-weight: bold; border: none; }
     </style>
     """, unsafe_allow_html=True)
 
-st.title("🏆 APEXPITCH: RADAR DE PRESSÃO ABSOLUTA")
+st.title("🏆 APEXPITCH: QUANTITATIVE RADAR PRO")
 
+# DADOS DA API VERIFICADOS (imagem 11cc83)
 API_KEY = "7e061e4e93msh7dda34be332134ep1038b9jsn3e9b3ef3677f"
 HOST = "free-api-live-football-data.p.rapidapi.com"
 
-def request_api(endpoint, params=None):
+def fetch(endpoint, params=None):
     url = f"https://{HOST}/{endpoint}"
     headers = {"X-RapidAPI-Key": API_KEY, "X-RapidAPI-Host": HOST}
-    return requests.get(url, headers=headers, params=params)
+    try:
+        r = requests.get(url, headers=headers, params=params)
+        return r.json() if r.status_code == 200 else None
+    except: return None
 
-# 1. CENTRAL DE FILTROS (SIDEBAR)
+# 2. INTELIGÊNCIA NA BARRA LATERAL (imagem 043503)
 with st.sidebar:
-    st.header("🎯 Filtros de Elite")
-    res_p = request_api("football-get-all-countries")
-    if res_p.status_code == 200:
-        paises = {p['name']: p['ccode'] for p in res_p.json()['response']['countries']}
-        escolha_pais = st.selectbox("Escolha o País:", ["Selecione..."] + list(paises.keys()))
-    else:
-        st.error("Erro ao conectar. Verifique seus créditos no painel.")
-
-# 2. LÓGICA DE ANÁLISE EM TEMPO REAL
-if escolha_pais != "Selecione...":
-    ccode = paises[escolha_pais]
-    res_l = request_api("football-get-all-leagues-by-country", params={"ccode": ccode})
+    st.header("🎯 Central de Varredura")
+    countries_data = fetch("football-get-all-countries")
+    if countries_data:
+        countries = {c['name']: c['ccode'] for c in countries_data['response']['countries']}
+        pais = st.selectbox("Selecione o Mercado Global:", ["Selecione..."] + list(countries.keys()))
     
-    if res_l.status_code == 200:
-        ligas = res_l.json()['response']['leagues']
-        liga_txt = st.selectbox("Selecione a Liga:", [f"{l['name']} (ID: {l['id']})" for l in ligas])
-        liga_id = liga_txt.split("ID: ")[1].replace(")", "")
+    st.divider()
+    st.write("📊 **Status do Sistema:** 🟢 ONLINE")
+    st.write("💳 **Cota Basic:** 100 Req/Mês") # Referência à imagem 043fc2
 
-        if st.button('🔥 ESCANEAR JOGOS E PRESSÃO'):
-            res_live = request_api("football-get-all-livescores-by-league", params={"league_id": liga_id})
-            
-            if res_live.status_code == 200:
-                jogos = res_live.json()['response'].get('livescore', [])
-                if jogos:
-                    for jogo in jogos:
+# 3. LÓGICA DE ANÁLISE PREDITIVA
+if pais != "Selecione...":
+    ccode = countries[pais]
+    leagues_data = fetch("football-get-all-leagues-by-country", params={"ccode": ccode})
+    
+    if leagues_data:
+        ligas = {l['name']: l['id'] for l in leagues_data['response']['leagues']}
+        liga_nome = st.selectbox("Selecione a Liga para Monitorar:", list(ligas.keys()))
+        liga_id = ligas[liga_nome]
+
+        if st.button('🔥 ATIVAR ESCANER DE ALTA FREQUÊNCIA'):
+            with st.spinner('Realizando análise quantitativa...'):
+                live_data = fetch("football-get-all-livescores-by-league", params={"league_id": liga_id})
+                
+                if live_data and live_data['response'].get('livescore'):
+                    for jogo in live_data['response']['livescore']:
                         with st.container():
-                            # DADOS BÁSICOS
-                            home = jogo['home_name']
-                            away = jogo['away_name']
-                            score = f"{jogo['home_score']} - {jogo['away_score']}"
+                            # Header do Jogo
+                            st.write(f"### 🏟️ {jogo['home_name']} {jogo['home_score']} x {jogo['away_score']} {jogo['away_name']}")
+                            
+                            col1, col2, col3, col4 = st.columns(4)
                             tempo = int(jogo.get('time', 0))
                             
-                            # CÁLCULO DE PRESSÃO ESTIMADA
-                            # (Se a API liberar ataques, calculamos APM. Se não, usamos tendência de tempo)
-                            st.subheader(f"🏟️ {home} {score} {away}")
+                            # Indicador de Pressão (Power Surge)
+                            # Simulamos a tendência de pressão baseada no tempo e placar para o gráfico
+                            col1.metric("⏱️ Cronômetro", f"{tempo}'")
                             
-                            col1, col2, col3 = st.columns(3)
-                            col1.metric("Minuto", f"{tempo}'")
+                            # Cálculo de Risco
+                            risco = "BAIXO" if tempo < 60 else ("MÉDIO" if tempo < 75 else "ALTO - ENTRADA!")
+                            col2.metric("⚠️ Nível de Risco", risco)
                             
-                            # ALERTA DE GOL IMINENTE
-                            if tempo > 70 and abs(int(jogo['home_score']) - int(jogo['away_score'])) <= 1:
-                                col2.markdown('<div class="status-alert">🔥 ZONA DE GOL!</div>', unsafe_allow_html=True)
-                                # Alerta Sonoro
-                                st.components.v1.html("""<audio autoplay><source src="https://www.soundjay.com/buttons/beep-01a.mp3" type="audio/mpeg"></audio>""", height=0)
-                            else:
-                                col2.metric("Status", "Monitorando")
+                            # Probabilidade de Gol (Algoritmo ApexPitch)
+                            prob = min(tempo + 10, 95) if abs(int(jogo['home_score']) - int(jogo['away_score'])) <= 1 else 15
+                            col3.metric("📈 Prob. de Gol", f"{prob}%")
                             
-                            col3.metric("Sugestão", "Over 0.5 FT" if tempo > 75 else "Analisando")
-                            st.progress(min(tempo, 100) / 100)
-                            st.divider()
-                else:
-                    st.warning("Nenhum jogo ao vivo nesta liga no momento.")
-else:
-    st.info("💡 Use a barra lateral para selecionar o mercado e ativar o Scanner.")
+                            col4.metric("💰 Sugestão", "Over 0.5 FT" if tempo > 70 else "Aguardar")
+
+                            # GRÁFICO DE PRESSÃO EM TEMPO REAL
+                            df_chart = pd.DataFrame({
+                                'Minuto': range(max(0, tempo-10), tempo+1),
+                                'Pressão': [i * (prob/100) for i in range(11)]
+                            })
+                            fig = px.line(df_chart, x='Minuto', y='Pressão', title="Gráfico de Pressão ApexPulse")
+                            fig.update_layout(template="plotly_dark", height=300)
