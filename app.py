@@ -10,7 +10,7 @@ st.title("🏆 APEXPITCH: RADAR DE OPORTUNIDADES")
 API_KEY = "7e061e4e93msh7dda34be332134ep1038b9jsn3e9b3ef3677f"
 
 def buscar_paises():
-    # Único endereço que seu plano Basic aprovou com Status 200 (imagem 05213d)
+    # Este é o único endereço que seu painel aprovou com Status 200 (imagem 05213d)
     url = "https://free-api-live-football-data.p.rapidapi.com/football-get-all-countries"
     headers = {
         "X-RapidAPI-Key": API_KEY,
@@ -24,14 +24,14 @@ if st.button('🌍 ESCANEAR MERCADO GLOBAL'):
         
         if res.status_code == 200:
             st.success("CONEXÃO ESTABELECIDA COM SUCESSO!")
-            # Estrutura de resposta confirmada (conforme imagem 051a16)
+            # Estrutura exata da resposta (conforme imagem 051a16)
             paises = res.json().get('response', {}).get('countries', [])
             
             if paises:
-                st.write("### Mercados Disponíveis (Plano Basic Ativo):")
+                st.write("### Mercados Disponíveis para Monitoramento (Plano Basic):")
                 df = pd.DataFrame(paises)
                 st.dataframe(df, use_container_width=True)
             else:
-                st.warning("Conectado, mas sem dados. Aguarde 1 minuto.")
+                st.warning("Conectado, mas nenhum dado retornado. Tente novamente em instantes.")
         else:
-            st.error(f"Erro {res.status_code}. Você atingiu o limite de 100 consultas mensais do plano Basic.")
+            st.error(f"Erro {res.status_code}. Verifique o limite de 100 requisições no seu painel.")
