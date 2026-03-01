@@ -2,17 +2,16 @@ import streamlit as st
 import requests
 import pandas as pd
 
-st.set_page_config(page_title="APEXPITCH ELITE", layout="wide")
-
-# CSS para Estilo Hacker/Profissional
+# Interface de Alta Performance
+st.set_page_config(page_title="APEXPITCH PRO", layout="wide")
 st.markdown("""
     <style>
-    .stMetric { background-color: #1e2130; padding: 15px; border-radius: 10px; border-left: 5px solid #ff4b4b; }
-    .stDataFrame { border: 1px solid #ff4b4b; }
+    .stMetric { background-color: #0e1117; border: 1px solid #ff4b4b; padding: 10px; border-radius: 5px; }
+    .stAlert { background-color: #ff4b4b; color: white; }
     </style>
     """, unsafe_allow_html=True)
 
-st.title("🏆 APEXPITCH: SCANNER DE ELITE V2")
+st.title("🏆 APEXPITCH: RADAR DE PRESSÃO V3")
 
 API_KEY = "7e061e4e93msh7dda34be332134ep1038b9jsn3e9b3ef3677f"
 HOST = "free-api-live-football-data.p.rapidapi.com"
@@ -22,49 +21,54 @@ def request_api(endpoint, params=None):
     headers = {"X-RapidAPI-Key": API_KEY, "X-RapidAPI-Host": HOST}
     return requests.get(url, headers=headers, params=params)
 
-# 1. BARRA LATERAL (Filtro por País)
+# 1. BARRA LATERAL - GESTÃO DE DADOS
 with st.sidebar:
-    st.header("🎯 Radar de Precisão")
+    st.header("🎯 Central de Comando")
     res_p = request_api("football-get-all-countries")
     if res_p.status_code == 200:
         paises_dict = {p['name']: p['ccode'] for p in res_p.json()['response']['countries']}
-        pais_nome = st.selectbox("Escolha o Mercado:", ["Selecione..."] + list(paises_dict.keys()))
+        pais_nome = st.selectbox("Selecione o País:", ["Selecione..."] + list(paises_dict.keys()))
     else:
-        st.error("Limite da API atingido no painel.")
+        st.error("Erro de conexão. Verifique o limite de 100 requisições.")
 
-# 2. SELEÇÃO DE LIGA E JOGOS AO VIVO
+# 2. LÓGICA DE ESCANEAMENTO
 if pais_nome != "Selecione...":
     ccode = paises_dict[pais_nome]
     res_l = request_api("football-get-all-leagues-by-country", params={"ccode": ccode})
     
     if res_l.status_code == 200:
         ligas = res_l.json()['response']['leagues']
-        liga_escolhida = st.selectbox("Selecione a Liga Ativa:", [f"{l['name']} (ID: {l['id']})" for l in ligas])
+        liga_escolhida = st.selectbox("Ligas Ativas:", [f"{l['name']} (ID: {l['id']})" for l in ligas])
         liga_id = liga_escolhida.split("ID: ")[1].replace(")", "")
 
-        if st.button('📡 ESCANEAR PRESSÃO AO VIVO'):
-            # BUSCANDO JOGOS EM TEMPO REAL DA LIGA SELECIONADA
+        if st.button('🔥 INICIAR VARREDURA DE PRESSÃO'):
             res_live = request_api("football-get-all-livescores-by-league", params={"league_id": liga_id})
             
             if res_live.status_code == 200:
                 jogos = res_live.json()['response'].get('livescore', [])
                 if jogos:
                     for jogo in jogos:
-                        with st.container():
-                            col1, col2, col3 = st.columns([2,1,2])
-                            col1.subheader(jogo['home_name'])
-                            col2.title(f"{jogo['home_score']} - {jogo['away_score']}")
-                            col3.subheader(jogo['away_name'])
-                            
-                            # CÁLCULO DE PRESSÃO (POWER SURGE)
-                            # Nota: Se a API não entregar ataques perigosos no Basic, 
-                            # usamos o volume de jogo e tempo.
-                            st.progress(min(int(jogo.get('time', 0)) * 1, 100), text=f"Tempo de Jogo: {jogo['time']}'")
-                            st.divider()
+                        # ANÁLISE DE PRESSÃO (POWER SURGE)
+                        # Calculamos o risco com base no tempo (minutos finais = maior pressão)
+                        tempo = int(jogo.get('time', 0))
+                        placar_apertado = abs(int(jogo['home_score']) - int(jogo['away_score'])) <= 1
+                        pressao = "BAIXA"
+                        
+                        if tempo > 75 and placar_apertado:
+                            pressao = "MÁXIMA - GOL IMINENTE!"
+                            st.balloons() # Efeito visual de oportunidade
+                            # ALERTA SONORO (O segredo do Nível 3)
+                            st.components.v1.html("""<audio autoplay><source src="https://www.soundjay.com/buttons/beep-01a.mp3" type="audio/mpeg"></audio>""", height=0)
+                        
+                        # EXIBIÇÃO PRO
+                        with st.expander(f"⚽ {jogo['home_name']} {jogo['home_score']} x {jogo['away_score']} {jogo['away_name']} | {tempo}'", expanded=True):
+                            c1, c2, c3 = st.columns(3)
+                            c1.metric("Status de Pressão", pressao)
+                            c2.metric("Tempo", f"{tempo}'")
+                            c3.metric("Oportunidade", "OVER 0.5" if tempo > 70 else "Aguardar")
                 else:
-                    st.warning("Nenhum jogo acontecendo nesta liga agora.")
+                    st.warning("Sem jogos ao vivo nesta liga.")
             else:
-                st.error("Esta liga não possui jogos ao vivo no momento.")
-
+                st.error("Não foi possível acessar os livescores agora.")
 else:
-    st.info("💡 Selecione um país na barra lateral para começar a análise de mercado.")
+    st.info("💡 Escolha um país na lateral para ativar o radar.")
