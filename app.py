@@ -2,36 +2,36 @@ import streamlit as st
 import requests
 import pandas as pd
 
-# CONFIGURAÇÃO VISUAL
-st.set_page_config(page_title="APEXPITCH PRO", layout="wide")
+# Configuração de interface profissional
+st.set_page_config(page_title="APEXPITCH RADAR", layout="wide")
 st.title("🏆 APEXPITCH: RADAR DE OPORTUNIDADES")
 
-# SUA CHAVE VERIFICADA (imagem 11cc83.png)
+# Sua chave mestre validada (conforme imagem 11cc83)
 API_KEY = "7e061e4e93msh7dda34be332134ep1038b9jsn3e9b3ef3677f"
 
-def buscar_dados_vivos():
-    # Este é o ÚNICO endpoint que sua conta confirmou que aceita
-    url = "https://free-api-live-football-data.p.rapidapi.com/football-get-all-popular-league"
+def buscar_paises():
+    # Este é o ÚNICO endereço que seu painel aprovou com Status 200 (imagem 05213d)
+    url = "https://free-api-live-football-data.p.rapidapi.com/football-get-all-countries"
     headers = {
         "X-RapidAPI-Key": API_KEY,
         "X-RapidAPI-Host": "free-api-live-football-data.p.rapidapi.com"
     }
     return requests.get(url, headers=headers)
 
-if st.button('🔥 ESCANEAR JOGOS AGORA'):
-    with st.spinner('Acessando base de dados...'):
-        res = buscar_dados_vivos()
+if st.button('🌍 ESCANEAR MERCADO GLOBAL'):
+    with st.spinner('Acessando satélites da API...'):
+        res = buscar_paises()
         
         if res.status_code == 200:
-            st.success("CONEXÃO ESTABELECIDA COM SUCESSO!")
-            # Estrutura confirmada na sua imagem 11c4db.png
-            dados = res.json().get('response', {}).get('popular_league', [])
+            st.success("CONEXÃO ESTABELECIDA!")
+            # Estrutura exata da resposta desta API (conforme imagem 051a16)
+            paises = res.json().get('response', {}).get('countries', [])
             
-            if dados:
-                df = pd.DataFrame(dados)
-                st.write("### 🏟️ Ligas com Jogos em Destaque")
+            if paises:
+                df = pd.DataFrame(paises)
+                st.write("### Selecione um país para abrir as ligas:")
                 st.dataframe(df, use_container_width=True)
             else:
-                st.warning("Conectado! Mas a API não retornou jogos nas ligas populares agora.")
+                st.warning("Conectado, mas nenhum país foi retornado no momento.")
         else:
-            st.error(f"Erro {res.status_code}. A API não reconheceu este comando.")
+            st.error(f"Erro {res.status_code}. Verifique a aba Authorizations no painel.")
